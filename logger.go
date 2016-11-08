@@ -93,7 +93,7 @@ func (this *Logger) Log(skip int, level Level, v []interface{}) {
 
 	format := NewFormat(level, v, skip+2)
 
-	if this.config.Level <= level && this.config.ConsoleLevel <= level {
+	if this.config.Level <= level || this.config.ConsoleLevel <= level {
 		format_string := format.String() + "\n"
 
 		if this.config.ConsoleLevel <= level {
