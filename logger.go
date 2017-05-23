@@ -14,6 +14,7 @@ type Logger struct {
 	fileName    string
 	fileSize    int64
 	maxFileSize int64
+	formatFunc  func(*Format) string
 }
 
 func NewLogger(config *Config) (*Logger, error) {
@@ -84,6 +85,10 @@ func (this *Logger) IsFileExit(file_path string) bool {
 	return err == nil || os.IsExist(err)
 }
 
+func (this *Logger) SetFormatFunc(f func(*Format) string) {
+	this.formatFunc = f
+}
+
 func (this *Logger) Log(skip int, level Level, v []interface{}) {
 	this.Lock()
 	defer this.Unlock()
@@ -94,7 +99,13 @@ func (this *Logger) Log(skip int, level Level, v []interface{}) {
 	format := NewFormat(level, v, skip+2)
 
 	if this.config.Level <= level || this.config.ConsoleLevel <= level {
-		format_string := format.String() + "\n"
+		format_string := ""
+
+		if this.formatFunc != nil {
+			format_string = this.formatFunc(format)
+		} else {
+			format_string = format.String() + "\n"
+		}
 
 		if this.config.ConsoleLevel <= level {
 			fmt.Print(format_string)
