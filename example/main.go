@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/lesterpang/logger"
+	"github.com/goroom/logger"
 )
 
 type A struct {
