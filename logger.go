@@ -104,7 +104,7 @@ func (this *Logger) Log(skip int, level Level, v []interface{}) {
 		if this.formatFunc != nil {
 			format_string = this.formatFunc(format)
 		} else {
-			format_string = format.String() + "\n"
+			format_string = format.ColorString() + "\n"
 		}
 
 		if this.config.ConsoleLevel <= level {
