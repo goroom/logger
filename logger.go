@@ -108,9 +108,10 @@ func (this *Logger) Log(skip int, level Level, v []interface{}) {
 		}
 
 		if this.config.ConsoleLevel <= level {
-			fmt.Print(format_string)
+			fmt.Print(format.ColorString() + "\n")
 		}
 
+		format_string = format.String() + "\n"
 		if this.config.Level <= level {
 			this.Write(&format_string)
 		}
