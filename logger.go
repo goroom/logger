@@ -135,6 +135,7 @@ func (this *Logger) SetFormatFunc(f func(*Format) string) {
 }
 
 func log(skip int, level Level, v []interface{}) {
+	checkDefaultLogger()
 	var format *Format
 
 	//Console log
@@ -180,7 +181,6 @@ func (this *Logger) write(format_string *string) {
 }
 
 func Debug(v ...interface{}) {
-	checkDefaultLogger()
 	log(1, DEBUG, v)
 }
 
