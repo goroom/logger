@@ -68,9 +68,9 @@ func StringLevel(level string) Level {
 
 type Config struct {
 	ConsoleLevel    Level
+	FileLevel       Level
 	FilePath        string
 	FileBaseName    string
-	Level           Level
 	MaxFileCount    int
 	MaxFileSize     int64
 	MaxFileSizeUnit Unit
@@ -80,9 +80,9 @@ type Config struct {
 func NewDefaultConfig() *Config {
 	var config Config
 	config.ConsoleLevel = ALL
+	config.FileLevel = ALL
 	config.FilePath = "./"
 	config.FileBaseName = "main.log"
-	config.Level = ALL
 	config.MaxFileCount = 5
 	config.MaxFileSize = 5
 	config.MaxFileSizeUnit = MB

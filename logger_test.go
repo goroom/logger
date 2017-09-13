@@ -14,33 +14,33 @@ func TestA(t *testing.T) {
 	default_config := NewDefaultConfig()
 	default_config.FilePath = "log"
 	default_config.FileBaseName = "logger.log"
-	log, err := NewLogger(default_config)
+	err := Init(default_config)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	log.SetMaxFileSize(1, KB)
-	log.Debug("debug_message", A{a: 1, b: "2"})
+	SetMaxFileSize(1, KB)
+	Debug("debug_message", A{a: 1, b: "2"})
 
-	log.SetLevel(INFO)
-	log.SetConsoleLevel(INFO)
-	log.Debug("debug_message")
+	SetFileLevel(INFO)
+	SetConsoleLevel(INFO)
+	Debug("debug_message")
 
-	log.Info("info_message")
-	log.Warn("warn_message")
+	Info("info_message")
+	Warn("warn_message")
 
-	log.SetCallBackFunc(func(f *Format) {
+	SetCallBackFunc(func(f *Format) {
 		fmt.Println("Call back", f)
 	})
 
-	log.Error("error_message")
-	log.Fatal("fatal_message")
-
-	SetDefaultLogger(log)
+	Error("error_message")
+	Fatal("fatal_message")
 	Debug("debug_message", 2)
 
-	log.SetConsoleLevel(OFF)
-	log.SetLevel(OFF)
+	SetConsoleLevel(OFF)
+	SetFileLevel(OFF)
 
 	Error("detault_debug_message")
+
+	//time.Sleep(1e9)
 }

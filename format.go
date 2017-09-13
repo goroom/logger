@@ -38,11 +38,11 @@ func NewFormat(level Level, v []interface{}, skip int) *Format {
 	return &format
 }
 
-func (this *Format) String() string {
+func (this *Format) FileString() string {
 	return this.Time.Format("2006-01-02 15:04:05") + " [" + this.Level.String() + "] " + this.Message + " --" + this.File + ":" + strconv.Itoa(this.Line)
 }
 
-func (this *Format) ColorString() string {
+func (this *Format) ConsoleString() string {
 	cn := "37"
 	switch this.Level {
 	case DEBUG:

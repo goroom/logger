@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/goroom/logger"
 )
@@ -19,55 +20,41 @@ func main() {
 	//修改默认配置的日志文件名称
 	default_config.FileBaseName = "logger.log"
 	//设置日志级别的两种方式
-	default_config.Level = logger.StringLevel("DEBUG")
-	default_config.Level = logger.DEBUG
+	default_config.ConsoleLevel = logger.StringLevel("ALL")
+	default_config.FileLevel = logger.WARN
 
-	//新建日志
-	log, err := logger.NewLogger(default_config)
+	//初始化日志
+	err := logger.Init(default_config)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	//修改日志文件最大为1KB
-	log.SetMaxFileSize(1, logger.KB)
-	//输出debug日志
-	log.Debug("debug_message", A{a: 1, b: "2"})
-	//输出自定义日志
-	log.Log(0, logger.DEBUG, []interface{}{"log_message"})
+	logger.SetMaxFileSize(1, logger.KB)
 
-	//设置日志级别为INDO
-	log.SetLevel(logger.INFO)
-	//设置终端输出的日志界别为INFO
-	log.SetConsoleLevel(logger.INFO)
+	logger.Debug("这条日志会出现在终端，不会出现在日志文件。")
+	logger.Warn("这条日志会出现在终端和日志文件。")
+
+	//输出debug日志
+	logger.Debug("debug_message", A{a: 1, b: "2"})
+
+	//设置文件日志级别为INFO
+	logger.SetFileLevel(logger.INFO)
+	//设置终端输出的日志级别为INFO
+	logger.SetConsoleLevel(logger.INFO)
 	//打印日志
-	log.Debug("debug_message")
-	log.Info("info_message")
-	log.Warn("warn_message")
+	logger.Debug("debug_message")
+	logger.Info("info_message")
+	logger.Warn("warn_message")
 
 	//设置日志回调，可以自行处理日志，例如发送到日志服务器。
-	log.SetCallBackFunc(func(f *logger.Format) {
-		fmt.Println("Call back", f)
+	logger.SetCallBackFunc(func(f *logger.Format) {
+		fmt.Println("[CB]", f.ConsoleString())
 	})
 
 	//打印日志
-	log.Error("error_message")
-	log.Fatal("fatal_message")
+	logger.Error("error_message")
+	logger.Fatal("fatal_message")
 
-	//未设置默认日志时，只在终端输出日志内容
-	logger.Debug("Use default logger debug")
-	//未设置默认日志时，输出自定义日志
-	logger.Log(0, logger.DEBUG, []interface{}{"log_message"})
-
-	//设置默认日志（在一处初始化并设置为默认，在其他文件内可直接调用logger.xxx打印日志，注意log和logger的区别）
-	logger.SetDefaultLogger(log)
-	//打印日志
-	logger.Debug("debug_message", 2)
-
-	//设置默认日志关闭终端显示
-	logger.GetDefaultLogger().SetConsoleLevel(logger.OFF)
-	//设置默认日志关闭写入文件
-	logger.GetDefaultLogger().SetLevel(logger.OFF)
-
-	//打印日志
-	logger.Error("detault_debug_message")
+	time.Sleep(1e9)
 }

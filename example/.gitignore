@@ -1,2 +1,3 @@
-./log
-./example
+log
+example
+main.log*
