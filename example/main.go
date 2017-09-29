@@ -32,6 +32,12 @@ func main() {
 	//修改日志文件最大为1KB
 	logger.SetMaxFileSize(1, logger.KB)
 
+	logger.Debugf("a%d1%s[%v]", 4, "p", A{a: 1, b: "2"})
+	logger.Infof("a%d1%s[%v]", 4, "p", A{a: 1, b: "2"})
+	logger.Warnf("a%d1%s[%v]", 4, "p", A{a: 1, b: "2"})
+	logger.Errorf("a%d1%s[%v]", 4, "p", A{a: 1, b: "2"})
+	logger.Fatalf("a%d1%s[%v]", 4, "p", A{a: 1, b: "2"})
+
 	logger.Debug("这条日志会出现在终端，不会出现在日志文件。")
 	logger.Warn("这条日志会出现在终端和日志文件。")
 
