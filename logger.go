@@ -184,19 +184,40 @@ func Debug(v ...interface{}) {
 	log(1, DEBUG, v)
 }
 
+func Debugf(format string, a ...interface{}) {
+	log(1, DEBUG, []interface{}{fmt.Sprintf(format, a...)})
+}
+
 func Info(v ...interface{}) {
 	log(1, INFO, v)
+}
+
+func Infof(format string, a ...interface{}) {
+	log(1, INFO, []interface{}{fmt.Sprintf(format, a...)})
 }
 
 func Warn(v ...interface{}) {
 	log(1, WARN, v)
 }
+
+func Warnf(format string, a ...interface{}) {
+	log(1, WARN, []interface{}{fmt.Sprintf(format, a...)})
+}
+
 func Error(v ...interface{}) {
 	log(1, ERROR, v)
 }
 
+func Errorf(format string, a ...interface{}) {
+	log(1, ERROR, []interface{}{fmt.Sprintf(format, a...)})
+}
+
 func Fatal(v ...interface{}) {
 	log(1, FATAL, v)
+}
+
+func Fatalf(format string, a ...interface{}) {
+	log(1, FATAL, []interface{}{fmt.Sprintf(format, a...)})
 }
 
 func SetFileLevel(level Level) {
