@@ -1,91 +1,49 @@
 package logger
 
 import (
-	"strings"
+	"context"
+	"os"
+	"path/filepath"
 )
 
-type Unit int64
+type config struct {
+	consoleLevel      Level
+	consoleFormatFunc FormatFunc
 
-const (
-	_       = iota
-	KB Unit = 1 << (iota * 10)
-	MB
-	GB
-	TB
-)
+	fileLevel      Level
+	fileFormatFunc FormatFunc
+	fileChanCnt    int32
+	filePath       string
+	fileNameBase   string
+	fileSizeMax    int64
+	fileCntMax     int
 
-type Level int
+	ctxCBFunc func(context.Context) string
+}
 
-const (
-	ALL Level = iota
-	DEBUG
-	INFO
-	WARN
-	ERROR
-	FATAL
-	OFF
-)
+func (c *config) GetFilePath() string {
+	return c.filePath + "/" + c.fileNameBase + ".log"
+}
 
-func (level Level) String() string {
-	switch level {
-	case ALL:
-		return "ALL"
-	case DEBUG:
-		return "DEBUG"
-	case INFO:
-		return "INFO"
-	case WARN:
-		return "WARN"
-	case ERROR:
-		return "ERROR"
-	case FATAL:
-		return "FATAL"
-	case OFF:
-		return "OFF"
+func getDefaultConfig() *config {
+	execFilePath, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	if err != nil || execFilePath == "" {
+		execFilePath = "."
 	}
-	return ""
-}
-
-func StringLevel(level string) Level {
-	level = strings.ToUpper(level)
-	switch level {
-	case "ALL":
-		return ALL
-	case "DEBUG":
-		return DEBUG
-	case "INFO":
-		return INFO
-	case "WARN":
-		return WARN
-	case "ERROR":
-		return ERROR
-	case "FATAL":
-		return FATAL
-	default:
-		return OFF
+	execFileName := filepath.Base(os.Args[0])
+	if execFileName == "" {
+		execFileName = "unknown"
 	}
-}
+	return &config{
+		consoleLevel:      ALL,
+		consoleFormatFunc: defaultConsoleFormatFunc,
 
-type Config struct {
-	ConsoleLevel    Level
-	FileLevel       Level
-	FilePath        string
-	FileBaseName    string
-	MaxFileCount    int
-	MaxFileSize     int64
-	MaxFileSizeUnit Unit
-	CallBackFunc    func(format *Format)
-}
-
-func NewDefaultConfig() *Config {
-	var config Config
-	config.ConsoleLevel = ALL
-	config.FileLevel = ALL
-	config.FilePath = "./"
-	config.FileBaseName = "main.log"
-	config.MaxFileCount = 5
-	config.MaxFileSize = 5
-	config.MaxFileSizeUnit = MB
-
-	return &config
+		fileLevel:      OFF,
+		fileFormatFunc: defaultFileFormatFunc,
+		fileChanCnt:    10000,
+		filePath:       execFilePath + "/log",
+		fileNameBase:   execFileName,
+		fileSizeMax:    MB.CalB(5),
+		fileCntMax:     5,
+	}
 }

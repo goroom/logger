@@ -2,65 +2,51 @@ package main
 
 import (
 	"fmt"
-	"time"
-
 	"github.com/goroom/logger"
+	"golang.org/x/net/context"
+	"time"
 )
 
-type A struct {
-	a int
-	b string
-}
-
 func main() {
-	//获取一个默认配置
-	default_config := logger.NewDefaultConfig()
-	//修改默认配置的日志文件路径
-	default_config.FilePath = "./log"
-	//修改默认配置的日志文件名称
-	default_config.FileBaseName = "logger.log"
-	//设置日志级别的两种方式
-	default_config.ConsoleLevel = logger.StringLevel("ALL")
-	default_config.FileLevel = logger.WARN
+	logger.Debug("no save file")
 
-	//初始化日志
-	err := logger.Init(default_config)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	//修改日志文件最大为1KB
-	logger.SetMaxFileSize(1, logger.KB)
+	logger.SetFileLevel(logger.ALL)       // default off
+	logger.SetFileSize(logger.KB.CalB(2)) // default 5MB
+	logger.SetFileCount(3)                // default 5
+	logger.Debug("d")
+	logger.DebugF("%s %d", "a", 1)
+	logger.Info("i")
+	logger.InfoF("%s %d", "a", 1)
+	logger.Warn("w")
+	logger.WarnF("%s %d", "a", 1)
+	logger.Error("e")
+	logger.ErrorF("%s %d", "a", 1)
+	logger.Fatal("f")
+	logger.FatalF("%s %d", "a", 1)
 
-	logger.Debugf("a%d1%s[%v]", 4, "p", A{a: 1, b: "2"})
-	logger.Infof("a%d1%s[%v]", 4, "p", A{a: 1, b: "2"})
-	logger.Warnf("a%d1%s[%v]", 4, "p", A{a: 1, b: "2"})
-	logger.Errorf("a%d1%s[%v]", 4, "p", A{a: 1, b: "2"})
-	logger.Fatalf("a%d1%s[%v]", 4, "p", A{a: 1, b: "2"})
-
-	logger.Debug("这条日志会出现在终端，不会出现在日志文件。")
-	logger.Warn("这条日志会出现在终端和日志文件。")
-
-	//输出debug日志
-	logger.Debug("debug_message", A{a: 1, b: "2"})
-
-	//设置文件日志级别为INFO
-	logger.SetFileLevel(logger.INFO)
-	//设置终端输出的日志级别为INFO
-	logger.SetConsoleLevel(logger.INFO)
-	//打印日志
-	logger.Debug("debug_message")
-	logger.Info("info_message")
-	logger.Warn("warn_message")
-
-	//设置日志回调，可以自行处理日志，例如发送到日志服务器。
-	logger.SetCallBackFunc(func(f *logger.Format) {
-		fmt.Println("[CB]", f.ConsoleString())
+	logger.SetContextCallBackFunc(func(ct context.Context) string {
+		return "id"
 	})
+	logger.CDebug(context.Background(), "d")
+	logger.CDebugF(context.Background(), "%s %d", "a", 1)
+	logger.CInfo(context.Background(), "i")
+	logger.CInfoF(context.Background(), "%s %d", "a", 1)
+	logger.CWarn(context.Background(), "w")
+	logger.CWarnF(context.Background(), "%s %d", "a", 1)
+	logger.CError(context.Background(), "e")
+	logger.CErrorF(context.Background(), "%s %d", "a", 1)
+	logger.CFatal(context.Background(), "f")
+	logger.CFatalF(context.Background(), "%s %d", "a", 1)
 
-	//打印日志
-	logger.Error("error_message")
-	logger.Fatal("fatal_message")
+	logger.SetCallBackFunc(func(f *logger.Format) {
+		fmt.Println(f)
+	})
+	logger.Debug("has call back")
 
+	customerLogger := logger.NewLogger("tag1")
+	customerLogger.SetFileLevel(logger.ALL)
+	customerLogger.SetFilePath("./log2")
+	customerLogger.SetFileBaseName("ex")
+	customerLogger.Debug(1)
 	time.Sleep(1e9)
 }

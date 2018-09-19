@@ -2,59 +2,54 @@ package logger
 
 import (
 	"fmt"
+	"path"
 	"runtime"
-	"strconv"
+	"strings"
 	"time"
 )
 
 type Format struct {
-	Time    time.Time
-	Level   Level
-	Message string
-	File    string
-	Line    int
+	Time  time.Time
+	Level Level
+	Args  []interface{}
+	File  string
+	Line  int
 }
 
-func NewFormat(level Level, v []interface{}, skip int) *Format {
-	var format Format
-	format.Time = time.Now()
-	format.Level = level
-
-	for _, _v := range v {
-		format.Message += fmt.Sprint(_v) + " "
+func NewFormat(level Level, args []interface{}, skip int) *Format {
+	format := Format{
+		Time:  time.Now(),
+		Level: level,
+		Args:  args,
 	}
-	format.Message = format.Message[:len(format.Message)-1]
 
 	_, format.File, format.Line, _ = runtime.Caller(skip)
-	short := format.File
-	for i := len(format.File) - 1; i > 0; i-- {
-		if format.File[i] == '/' {
-			short = format.File[i+1:]
-			break
-		}
-	}
-	format.File = short
 
 	return &format
 }
 
-func (this *Format) FileString() string {
-	return this.Time.Format("2006-01-02 15:04:05") + " [" + this.Level.String() + "] " + this.Message + " --" + this.File + ":" + strconv.Itoa(this.Line)
+type FormatFunc func(*Format) string
+
+func defaultFormatArgs(args []interface{}) string {
+	var s []string
+	for i := 0; i < len(args); i++ {
+		s = append(s, fmt.Sprint(args[i]))
+	}
+	return strings.Join(s, " ")
 }
 
-func (this *Format) ConsoleString() string {
-	cn := "37"
-	switch this.Level {
-	case DEBUG:
-		cn = "34"
-	case INFO:
-		cn = "32"
-	case WARN:
-		cn = "33"
-	case ERROR:
-		cn = "35"
-	case FATAL:
-		cn = "31"
-	}
-	return this.Time.Format("2006-01-02 15:04:05") + " [\033[;" + cn + "m" + this.Level.String() + "\033[0m] " + this.Message + " --" + this.File + ":" + strconv.Itoa(this.Line)
+func defaultFormatFileName(fName string) string {
+	return path.Base(fName)
+}
+
+func defaultConsoleFormatFunc(f *Format) string {
+	return fmt.Sprintf("%s \033[;%dm%s\033[0m %s -%s:%d",
+		f.Time.Format("2006-01-02 15:04:05"), f.Level.ConsoleColorNum(), f.Level.String(),
+		defaultFormatArgs(f.Args), defaultFormatFileName(f.File), f.Line)
+}
+
+func defaultFileFormatFunc(f *Format) string {
+	return fmt.Sprintf("%s %s %s -%s:%d\n",
+		f.Time.Format("2006-01-02 15:04:05"), f.Level.String(),
+		defaultFormatArgs(f.Args), defaultFormatFileName(f.File), f.Line)
 }
