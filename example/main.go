@@ -1,9 +1,9 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/goroom/logger"
-	"golang.org/x/net/context"
 	"time"
 )
 
@@ -37,6 +37,11 @@ func main() {
 	logger.CErrorF(context.Background(), "%s %d", "a", 1)
 	logger.CFatal(context.Background(), "f")
 	logger.CFatalF(context.Background(), "%s %d", "a", 1)
+
+	logger.SetConsoleFormat(func(f *logger.Format) string {
+		return fmt.Sprintf("%s %v", f.Time.Format("15:02:03"), f.ArgsDefaultFormat())
+	})
+	logger.Debug("customer console format")
 
 	logger.SetCallBackFunc(func(f *logger.Format) {
 		fmt.Println(f)

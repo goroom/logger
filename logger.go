@@ -298,3 +298,11 @@ func (l *Logger) SetContextCallBackFunc(f func(ctx context.Context) string) {
 func (l *Logger) SetCallBackFunc(f func(*Format)) {
 	l.callBackFunc = f
 }
+
+func (l *Logger) SetConsoleFormat(f func(*Format) string) {
+	l.config.consoleFormatFunc = f
+}
+
+func (l *Logger) SetFileFormat(f func(*Format) string) {
+	l.config.fileFormatFunc = f
+}

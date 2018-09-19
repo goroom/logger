@@ -124,3 +124,15 @@ func SetContextCallBackFunc(f func(ctx context.Context) string) {
 func SetCallBackFunc(f func(*Format)) {
 	defaultLogger.SetCallBackFunc(f)
 }
+
+func SetConsoleFormat(f func(*Format) string) {
+	defaultLogger.SetConsoleFormat(f)
+}
+
+func SetFileFormat(f func(*Format) string) {
+	defaultLogger.SetFileFormat(f)
+}
+
+func SetFileBaseName(name string) {
+	defaultLogger.SetFileBaseName(name)
+}
