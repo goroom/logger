@@ -2,10 +2,46 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"github.com/goroom/logger"
+	"os"
+	"runtime/trace"
 	"time"
+
+	"github.com/goroom/logger"
 )
+
+func test() {
+	f, _ := os.Create("trace.out")
+	trace.Start(f)
+
+	logger.SetConsoleLevel(logger.OFF)
+	logger.SetFileLevel(logger.ALL)
+	logger.SetFileCount(5)
+	t1 := time.Now().UnixNano()
+	go func() {
+		for {
+			time.Sleep(1e9)
+			fmt.Println(logger.GetDefaultLogger().GetFileChannelCount())
+		}
+	}()
+	go func() {
+		for {
+			time.Sleep(1e5)
+			if logger.GetDefaultLogger().GetFileChannelCount() <= 0 {
+				fmt.Println((time.Now().UnixNano() - t1) / 1e6)
+				os.Exit(0)
+			}
+		}
+	}()
+	for i := 0; i < 1000000; i++ {
+		//time.Sleep(1e3)
+		//logger.Debug("12ks0192j192hisj12hs1029")
+		logger.Debug("logger.GetDefaultLogger()")
+	}
+	trace.Stop()
+	select {}
+}
 
 func main() {
 	logger.Debug("no save file")
@@ -38,13 +74,14 @@ func main() {
 	logger.CFatal(context.Background(), "f")
 	logger.CFatalF(context.Background(), "%s %d", "a", 1)
 
-	logger.SetConsoleFormat(func(f *logger.Format) string {
-		return fmt.Sprintf("%s %v", f.Time.Format("15:02:03"), f.ArgsDefaultFormat())
+	logger.SetConsoleFormat(func(f *logger.Format) []byte {
+		return []byte(fmt.Sprintf("%s %s", f.Time.Format("15:02:03"), string(f.ArgsDefaultFormat())))
 	})
 	logger.Debug("customer console format")
 
 	logger.SetCallBackFunc(func(f *logger.Format) {
-		fmt.Println(f)
+		b, _ := json.Marshal(f)
+		fmt.Println(string(b))
 	})
 	logger.Debug("has call back")
 
@@ -52,6 +89,12 @@ func main() {
 	customerLogger.SetFileLevel(logger.ALL)
 	customerLogger.SetFilePath("./log2")
 	customerLogger.SetFileBaseName("ex")
-	customerLogger.Debug(1)
-	time.Sleep(1e9)
+	customerLogger.Debug("customer logger")
+	for logger.GetDefaultLogger().GetFileChannelCount() > 0 {
+		time.Sleep(1e5)
+	}
+
+	for customerLogger.GetFileChannelCount() > 0 {
+		time.Sleep(1e5)
+	}
 }

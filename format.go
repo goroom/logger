@@ -1,10 +1,11 @@
 package logger
 
 import (
+	"bytes"
 	"fmt"
 	"path"
 	"runtime"
-	"strings"
+	"strconv"
 	"time"
 )
 
@@ -17,39 +18,43 @@ type Format struct {
 }
 
 func NewFormat(level Level, args []interface{}, skip int) *Format {
-	format := Format{
+	_, file, line, _ := runtime.Caller(skip)
+
+	return &Format{
 		Time:  time.Now(),
 		Level: level,
 		Args:  args,
+		File:  file,
+		Line:  line,
 	}
-
-	_, format.File, format.Line, _ = runtime.Caller(skip)
-
-	return &format
 }
 
-func (f *Format) ArgsDefaultFormat() string {
-	var s []string
+func (f *Format) ArgsDefaultFormat() []byte {
+	var buffer bytes.Buffer
 	for i := 0; i < len(f.Args); i++ {
-		s = append(s, fmt.Sprint(f.Args[i]))
+		buffer.WriteString(fmt.Sprint(f.Args[i]) + " ")
 	}
-	return strings.Join(s, " ")
+	return buffer.Bytes()
 }
 
-type FormatFunc func(*Format) string
+type FormatFunc func(*Format) []byte
 
 func defaultFormatFileName(fName string) string {
 	return path.Base(fName)
 }
 
-func defaultConsoleFormatFunc(f *Format) string {
-	return fmt.Sprintf("%s \033[;%dm%s\033[0m %s -%s:%d",
-		f.Time.Format("2006-01-02 15:04:05"), f.Level.ConsoleColorNum(), f.Level.String(),
-		f.ArgsDefaultFormat(), defaultFormatFileName(f.File), f.Line)
+func defaultConsoleFormatFunc(f *Format) []byte {
+	var buffer bytes.Buffer
+	buffer.WriteString(f.Time.Format("2006-01-02 15:04:05") + " " + f.Level.ConsoleColorString() + " ")
+	buffer.Write(f.ArgsDefaultFormat())
+	buffer.WriteString("-" + defaultFormatFileName(f.File) + ":" + strconv.Itoa(f.Line) + "\n")
+	return buffer.Bytes()
 }
 
-func defaultFileFormatFunc(f *Format) string {
-	return fmt.Sprintf("%s %s %s -%s:%d\n",
-		f.Time.Format("2006-01-02 15:04:05"), f.Level.String(),
-		f.ArgsDefaultFormat(), defaultFormatFileName(f.File), f.Line)
+func defaultFileFormatFunc(f *Format) []byte {
+	var buffer bytes.Buffer
+	buffer.WriteString(f.Time.Format("2006-01-02 15:04:05") + " " + f.Level.String() + " ")
+	buffer.Write(f.ArgsDefaultFormat())
+	buffer.WriteString("-" + defaultFormatFileName(f.File) + ":" + strconv.Itoa(f.Line) + "\n")
+	return buffer.Bytes()
 }

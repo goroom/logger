@@ -2,12 +2,13 @@ package logger
 
 import (
 	"fmt"
-	"golang.org/x/net/context"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"sync/atomic"
+
+	"golang.org/x/net/context"
 )
 
 var mapLogger = make(map[string]*Logger)
@@ -54,18 +55,19 @@ type Logger struct {
 	callBackFunc func(*Format)
 }
 
+func (l *Logger) GetFileChannelCount() int {
+	return int(l.fileFormatChanCurrCnt)
+}
+
 func (l *Logger) log(skip int, level Level, args []interface{}) {
 	if l == nil {
-		return
-	}
-	if level < l.config.consoleLevel && level < l.config.fileLevel {
 		return
 	}
 
 	format := NewFormat(level, args, skip+2)
 
 	if level >= l.config.consoleLevel {
-		fmt.Println(l.config.consoleFormatFunc(format))
+		fmt.Println(string(l.config.consoleFormatFunc(format)))
 	}
 
 	if level >= l.config.fileLevel {
@@ -210,8 +212,7 @@ func (l *Logger) run() {
 					return
 				}
 				atomic.AddInt32(&l.fileFormatChanCurrCnt, -1)
-				formatString := l.config.fileFormatFunc(format)
-				l.writeFile([]byte(formatString))
+				l.writeFile(l.config.fileFormatFunc(format))
 			}
 		}
 	}()
@@ -299,10 +300,10 @@ func (l *Logger) SetCallBackFunc(f func(*Format)) {
 	l.callBackFunc = f
 }
 
-func (l *Logger) SetConsoleFormat(f func(*Format) string) {
+func (l *Logger) SetConsoleFormat(f func(*Format) []byte) {
 	l.config.consoleFormatFunc = f
 }
 
-func (l *Logger) SetFileFormat(f func(*Format) string) {
+func (l *Logger) SetFileFormat(f func(*Format) []byte) {
 	l.config.fileFormatFunc = f
 }

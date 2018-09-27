@@ -1,9 +1,17 @@
 package logger
 
+import (
+	"fmt"
+)
+
 type Level int
 
 func (l Level) String() string {
 	return levelStringMap[l]
+}
+
+func (l Level) ConsoleColorString() string {
+	return fmt.Sprintf("\033[;%dm%s\033[0m", l.ConsoleColorNum(), l.String())
 }
 
 func (l Level) ConsoleColorNum() int {

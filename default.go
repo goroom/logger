@@ -9,11 +9,19 @@ var defaultLogger *Logger
 
 func init() {
 	defaultLogger = newLogger("")
-	fmt.Println("default log file", defaultLogger.config.GetFilePath())
+	// fmt.Println("default log file", defaultLogger.config.GetFilePath())
 }
 
 func GetDefaultLogger() *Logger {
 	return defaultLogger
+}
+
+func Log(skip int, level Level, args ...interface{}) {
+	defaultLogger.log(skip+1, level, args)
+}
+
+func LogF(skip int, level Level, format string, args ...interface{}) {
+	defaultLogger.logF(skip+1, level, format, args)
 }
 
 func Debug(args ...interface{}) {
@@ -125,11 +133,11 @@ func SetCallBackFunc(f func(*Format)) {
 	defaultLogger.SetCallBackFunc(f)
 }
 
-func SetConsoleFormat(f func(*Format) string) {
+func SetConsoleFormat(f func(*Format) []byte) {
 	defaultLogger.SetConsoleFormat(f)
 }
 
-func SetFileFormat(f func(*Format) string) {
+func SetFileFormat(f func(*Format) []byte) {
 	defaultLogger.SetFileFormat(f)
 }
 

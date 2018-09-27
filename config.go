@@ -40,7 +40,7 @@ func getDefaultConfig() *config {
 
 		fileLevel:      OFF,
 		fileFormatFunc: defaultFileFormatFunc,
-		fileChanCnt:    10000,
+		fileChanCnt:    1000000,
 		filePath:       execFilePath + "/log",
 		fileNameBase:   execFileName,
 		fileSizeMax:    MB.CalB(5),
