@@ -2,6 +2,7 @@ package logger
 
 import (
 	"fmt"
+	"strings"
 )
 
 type Level int
@@ -12,6 +13,23 @@ func (l Level) String() string {
 
 func (l Level) ConsoleColorString() string {
 	return fmt.Sprintf("\033[;%dm%s\033[0m", l.ConsoleColorNum(), l.String())
+}
+
+func ParseLevel(str string) Level {
+	switch strings.ToLower(str) {
+	case "all":
+		return ALL
+	case "debug":
+		return DEBUG
+	case "warn", "warning":
+		return WARN
+	case "error", "err":
+		return ERROR
+	case "fatal":
+		return FATAL
+	default:
+		return ALL
+	}
 }
 
 func (l Level) ConsoleColorNum() int {

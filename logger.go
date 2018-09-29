@@ -64,6 +64,10 @@ func (l *Logger) log(skip int, level Level, args []interface{}) {
 		return
 	}
 
+	if level < l.config.consoleLevel && level < l.config.fileLevel && l.callBackFunc == nil {
+		return
+	}
+
 	format := NewFormat(level, args, skip+2)
 
 	if level >= l.config.consoleLevel {
@@ -113,6 +117,18 @@ func (l *Logger) CDebugF(ctx context.Context, format string, args ...interface{}
 	l.cLogF(ctx, 1, DEBUG, format, args)
 }
 
+func (l *Logger) Info(args ...interface{}) {
+	l.log(1, INFO, args)
+}
+
+func (l *Logger) InfoF(format string, args ...interface{}) {
+	l.logF(1, INFO, format, args)
+}
+
+func (l *Logger) CInfo(ctx context.Context, args ...interface{}) {
+	l.cLog(ctx, 1, INFO, args)
+}
+
 func (l *Logger) Warn(args ...interface{}) {
 	l.log(1, WARN, args)
 }
@@ -159,14 +175,6 @@ func (l *Logger) CFatal(ctx context.Context, args ...interface{}) {
 
 func (l *Logger) CFatalF(ctx context.Context, format string, args ...interface{}) {
 	l.cLogF(ctx, 1, FATAL, format, args)
-}
-
-func (l *Logger) Info(args ...interface{}) {
-	l.log(1, INFO, args)
-}
-
-func (l *Logger) CInfo(ctx context.Context, args ...interface{}) {
-	l.cLog(ctx, 1, INFO, args)
 }
 
 func (l *Logger) getLogID(ctx context.Context) string {
