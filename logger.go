@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"golang.org/x/net/context"
+	"context"
 )
 
 var mapLogger = make(map[string]*Logger)
