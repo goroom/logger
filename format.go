@@ -6,8 +6,19 @@ import (
 	"path"
 	"runtime"
 	"strconv"
+	"sync"
 	"time"
 )
+
+var bufferPool *sync.Pool
+
+func init() {
+	bufferPool = &sync.Pool{
+		New: func() interface{} {
+			return new(bytes.Buffer)
+		},
+	}
+}
 
 type Format struct {
 	Time  time.Time
@@ -44,7 +55,9 @@ func defaultFormatFileName(fName string) string {
 }
 
 func defaultConsoleFormatFunc(f *Format) []byte {
-	var buffer bytes.Buffer
+	buffer := bufferPool.Get().(*bytes.Buffer)
+	buffer.Reset()
+	defer bufferPool.Put(buffer)
 	buffer.WriteString(f.Time.Format("2006-01-02 15:04:05") + " " + f.Level.ConsoleColorString() + " ")
 	buffer.Write(f.ArgsDefaultFormat())
 	buffer.WriteString("-" + defaultFormatFileName(f.File) + ":" + strconv.Itoa(f.Line) + "\n")
@@ -52,7 +65,9 @@ func defaultConsoleFormatFunc(f *Format) []byte {
 }
 
 func defaultFileFormatFunc(f *Format) []byte {
-	var buffer bytes.Buffer
+	buffer := bufferPool.Get().(*bytes.Buffer)
+	buffer.Reset()
+	defer bufferPool.Put(buffer)
 	buffer.WriteString(f.Time.Format("2006-01-02 15:04:05") + " " + f.Level.String() + " ")
 	buffer.Write(f.ArgsDefaultFormat())
 	buffer.WriteString("-" + defaultFormatFileName(f.File) + ":" + strconv.Itoa(f.Line) + "\n")
