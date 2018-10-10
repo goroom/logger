@@ -2,6 +2,7 @@ package logger
 
 import (
 	"fmt"
+	"strings"
 )
 
 type Level int
