@@ -60,7 +60,7 @@ func defaultConsoleFormatFunc(f *Format) []byte {
 	defer bufferPool.Put(buffer)
 	buffer.WriteString(f.Time.Format("2006-01-02 15:04:05") + " " + f.Level.ConsoleColorString() + " ")
 	buffer.Write(f.ArgsDefaultFormat())
-	buffer.WriteString("-" + defaultFormatFileName(f.File) + ":" + strconv.Itoa(f.Line) + "\n")
+	buffer.WriteString("-" + defaultFormatFileName(f.File) + ":" + strconv.Itoa(f.Line))
 	return buffer.Bytes()
 }
 
