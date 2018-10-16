@@ -192,6 +192,10 @@ func (l *Logger) SetFileLevel(level Level) {
 	l.config.fileLevel = level
 }
 
+func (l *Logger) SetConsoleLevel(level Level) {
+	l.config.consoleLevel = level
+}
+
 func (l *Logger) SetFilePath(path string) error {
 	filePath, err := filepath.Abs(path)
 	if err != nil {
