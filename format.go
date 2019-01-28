@@ -2,10 +2,12 @@ package logger
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"path"
 	"runtime"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -43,7 +45,14 @@ func NewFormat(level Level, args []interface{}, skip int) *Format {
 func (f *Format) ArgsDefaultFormat() []byte {
 	var buffer bytes.Buffer
 	for i := 0; i < len(f.Args); i++ {
-		buffer.WriteString(fmt.Sprint(f.Args[i]) + " ")
+		s := fmt.Sprint(f.Args[i])
+		if len(s) == 12 && strings.HasPrefix(s, "0x") {
+			data, err := json.Marshal(f.Args[i])
+			if err == nil {
+				s = "&" + string(data)
+			}
+		}
+		buffer.WriteString(s + " ")
 	}
 	return buffer.Bytes()
 }
