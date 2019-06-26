@@ -32,20 +32,15 @@ import (
 )
 
 func main() {
-    logger.SetFileLevel(logger.ALL)       // default off
-    logger.SetFileSize(logger.KB.CalB(2)) // default 5MB
-    logger.SetFileCount(3)                // default 5
-    logger.SetFileBaseName("ex")          // default exec name
-    logger.SetContextCallBackFunc(func(ct context.Context) string {
-    	return "id"
-    })
-    logger.SetConsoleFormat(func(f *logger.Format) string {
-    	return fmt.Sprintf("%s %v", f.Time.Format("15:02:03"), f.ArgsDefaultFormat())
-    })
-    logger.SetCallBackFunc(func(f *logger.Format) {
-		fmt.Println(f)
-	})
-    logger.DebugF("%d %s", 1, "name")
+    logger.InitDefaultLogger(
+    	logger.WithFileLevel(logger.INFO),
+    	logger.WithFileSize(logger.MB/10),
+    	logger.WithFileSplit(logger.DefaultFileNoSplit),
+    	logger.WithCallBack(func(f *logger.Format) {
+    		fmt.Println(f.Time)
+    	}),
+    )
+    logger.Debugf("%d %s", 1, "name")
 }
 ```
 
