@@ -27,8 +27,6 @@ func ParseLevel(str string) Level {
 		return WARN
 	case "error", "err":
 		return ERROR
-	case "fatal":
-		return FATAL
 	case "off":
 		return OFF
 	default:
@@ -46,15 +44,13 @@ func (l Level) ConsoleColorNum() int {
 		return 33
 	case ERROR:
 		return 35
-	case FATAL:
-		return 31
 	default:
 		return 37
 	}
 }
 
 var levelStringMap = []string{
-	"ALL", "DEBUG", "INFO", "WARN", "ERROR", "FATAL", "OFF",
+	"ALL", "DEBG", "INFO", "WARN", "EROR", "OFF",
 }
 
 const (
@@ -63,6 +59,5 @@ const (
 	INFO
 	WARN
 	ERROR
-	FATAL
 	OFF
 )

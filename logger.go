@@ -2,61 +2,41 @@ package logger
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
 	"sync/atomic"
-
-	"context"
+	"time"
 )
 
-var mapLogger = make(map[string]*Logger)
-
-func GetLogger(tag string) *Logger {
-	l, ok := mapLogger[tag]
-	if !ok {
-		return nil
-	}
-	return l
-}
-
-func NewLogger(tag string) *Logger {
-	l := GetLogger(tag)
-	if l != nil {
-		return nil
-	}
-	l = newLogger(tag)
-	mapLogger[tag] = l
-	return l
-}
-
-func newLogger(tag string) *Logger {
-	defaultConfig := getDefaultConfig()
-	logger := Logger{
-		tag:    tag,
-		config: defaultConfig,
-
-		fileFormatChan: make(chan *Format, defaultConfig.fileChanCnt),
-	}
-	logger.run()
-	return &logger
-}
-
 type Logger struct {
-	tag    string
-	config *config
+	opt *option
 
-	fileFormatChanCurrCnt int32
+	fileFormatChanCurrCnt int64
 	fileFormatChan        chan *Format
-	currFileSize          int64
-	file                  *os.File
 
-	callBackFunc func(*Format)
+	file *File
 }
 
-func (l *Logger) GetFileChannelCount() int {
-	return int(l.fileFormatChanCurrCnt)
+func NewLogger(opts ...Options) *Logger {
+	opt := newDefaultOption()
+	for _, v := range opts {
+		v(opt)
+	}
+
+	lg := &Logger{
+		opt:            opt,
+		fileFormatChan: make(chan *Format, opt.ChannelBuffLength),
+	}
+	lg.run()
+
+	return lg
+}
+
+func (l *Logger) Close() {
+	if l == nil {
+		return
+	}
+	close(l.fileFormatChan)
+	l.fileFormatChanCurrCnt = 0
+	l.file.Close()
 }
 
 func (l *Logger) log(skip int, level Level, args []interface{}) {
@@ -64,153 +44,108 @@ func (l *Logger) log(skip int, level Level, args []interface{}) {
 		return
 	}
 
-	if level < l.config.consoleLevel && level < l.config.fileLevel && l.callBackFunc == nil {
-		return
-	}
-
 	format := NewFormat(level, args, skip+2)
 
-	if level >= l.config.consoleLevel {
-		fmt.Println(string(l.config.consoleFormatFunc(format)))
+	if level >= l.opt.ConsoleLevel {
+		fmt.Println(l.opt.ConsoleFormatFunc(format))
 	}
 
-	if level >= l.config.fileLevel {
-		if l.fileFormatChanCurrCnt < l.config.fileChanCnt {
-			atomic.AddInt32(&l.fileFormatChanCurrCnt, 1)
+	if level >= l.opt.FileLevel {
+		if atomic.LoadInt64(&l.fileFormatChanCurrCnt) < l.opt.ChannelBuffLength {
+			atomic.AddInt64(&l.fileFormatChanCurrCnt, 1)
 			l.fileFormatChan <- format
 		} else {
 			fmt.Println("Log stack overflow, discard.")
 		}
 	}
 
-	if l.callBackFunc != nil {
-		l.callBackFunc(format)
+	if l.opt.CallBackFunc != nil {
+		l.opt.CallBackFunc(format)
 	}
 }
 
-func (l *Logger) cLog(ctx context.Context, skip int, level Level, args []interface{}) {
-	args = append([]interface{}{l.getLogID(ctx)}, args...)
-	l.log(skip+1, level, args)
+func (l *Logger) Wait() {
+	for {
+		if l.fileFormatChanCurrCnt == 0 {
+			return
+		}
+		time.Sleep(time.Millisecond * 10)
+	}
 }
 
-func (l *Logger) logF(skip int, level Level, format string, args []interface{}) {
+func (l *Logger) isLowLevel(lvl Level) bool {
+	if lvl < l.opt.FileLevel && lvl < l.opt.ConsoleLevel && l.opt.CallBackFunc == nil {
+		return true
+	}
+	return false
+}
+
+func (l *Logger) logf(skip int, level Level, format string, args []interface{}) {
 	l.log(skip+1, level, []interface{}{fmt.Sprintf(format, args...)})
 }
 
-func (l *Logger) cLogF(ctx context.Context, skip int, level Level, format string, args []interface{}) {
-	l.cLog(ctx, skip+1, level, []interface{}{fmt.Sprintf(format, args...)})
-}
-
 func (l *Logger) Debug(args ...interface{}) {
+	if l.isLowLevel(DEBUG) {
+		return
+	}
 	l.log(1, DEBUG, args)
 }
 
-func (l *Logger) DebugF(format string, args ...interface{}) {
-	l.logF(1, DEBUG, format, args)
-}
-
-func (l *Logger) CDebug(ctx context.Context, args ...interface{}) {
-	l.cLog(ctx, 1, DEBUG, args)
-}
-
-func (l *Logger) CDebugF(ctx context.Context, format string, args ...interface{}) {
-	l.cLogF(ctx, 1, DEBUG, format, args)
+func (l *Logger) Debugf(format string, args ...interface{}) {
+	if l.isLowLevel(DEBUG) {
+		return
+	}
+	l.logf(1, DEBUG, format, args)
 }
 
 func (l *Logger) Info(args ...interface{}) {
+	if l.isLowLevel(INFO) {
+		return
+	}
 	l.log(1, INFO, args)
 }
 
-func (l *Logger) InfoF(format string, args ...interface{}) {
-	l.logF(1, INFO, format, args)
-}
-
-func (l *Logger) CInfo(ctx context.Context, args ...interface{}) {
-	l.cLog(ctx, 1, INFO, args)
+func (l *Logger) Infof(format string, args ...interface{}) {
+	if l.isLowLevel(INFO) {
+		return
+	}
+	l.logf(1, INFO, format, args)
 }
 
 func (l *Logger) Warn(args ...interface{}) {
+	if l.isLowLevel(WARN) {
+		return
+	}
 	l.log(1, WARN, args)
 }
 
-func (l *Logger) WarnF(format string, args ...interface{}) {
-	l.logF(1, WARN, format, args)
-}
-
-func (l *Logger) CWarn(ctx context.Context, args ...interface{}) {
-	l.cLog(ctx, 1, WARN, args)
-}
-
-func (l *Logger) CWarnF(ctx context.Context, format string, args ...interface{}) {
-	l.cLogF(ctx, 1, WARN, format, args)
+func (l *Logger) Warnf(format string, args ...interface{}) {
+	if l.isLowLevel(WARN) {
+		return
+	}
+	l.logf(1, WARN, format, args)
 }
 
 func (l *Logger) Error(args ...interface{}) {
+	if l.isLowLevel(ERROR) {
+		return
+	}
 	l.log(1, ERROR, args)
 }
 
-func (l *Logger) ErrorF(format string, args ...interface{}) {
-	l.logF(1, ERROR, format, args)
-}
-
-func (l *Logger) CError(ctx context.Context, args ...interface{}) {
-	l.cLog(ctx, 1, ERROR, args)
-}
-
-func (l *Logger) CErrorF(ctx context.Context, format string, args ...interface{}) {
-	l.cLogF(ctx, 1, ERROR, format, args)
-}
-
-func (l *Logger) Fatal(args ...interface{}) {
-	l.log(1, FATAL, args)
-}
-
-func (l *Logger) FatalF(format string, args ...interface{}) {
-	l.logF(1, FATAL, format, args)
-}
-
-func (l *Logger) CFatal(ctx context.Context, args ...interface{}) {
-	l.cLog(ctx, 1, FATAL, args)
-}
-
-func (l *Logger) CFatalF(ctx context.Context, format string, args ...interface{}) {
-	l.cLogF(ctx, 1, FATAL, format, args)
-}
-
-func (l *Logger) getLogID(ctx context.Context) string {
-	if l.config.ctxCBFunc == nil || ctx == nil {
-		return "-"
+func (l *Logger) Errorf(format string, args ...interface{}) {
+	if l.isLowLevel(ERROR) {
+		return
 	}
-	logID := l.config.ctxCBFunc(ctx)
-	if logID == "" {
-		logID = "-"
-	}
-	return logID
+	l.logf(1, ERROR, format, args)
 }
 
 func (l *Logger) SetFileLevel(level Level) {
-	l.config.fileLevel = level
+	l.opt.FileLevel = level
 }
 
 func (l *Logger) SetConsoleLevel(level Level) {
-	l.config.consoleLevel = level
-}
-
-func (l *Logger) SetFilePath(path string) error {
-	filePath, err := filepath.Abs(path)
-	if err != nil {
-		return err
-	}
-	l.config.filePath = filePath
-	return nil
-}
-
-func (l *Logger) SetFileBaseName(name string) error {
-	if strings.Index(name, "/") >= 0 || strings.Index(name, "\\") >= 0 {
-		return fmt.Errorf("illegal file name")
-	}
-	l.config.fileNameBase = name
-	return nil
+	l.opt.ConsoleLevel = level
 }
 
 func (l *Logger) run() {
@@ -223,99 +158,32 @@ func (l *Logger) run() {
 				if !ok {
 					return
 				}
-				atomic.AddInt32(&l.fileFormatChanCurrCnt, -1)
-				l.writeFile(l.config.fileFormatFunc(format))
+				l.writeFile(l.opt.FileFormatFunc(format))
+				atomic.AddInt64(&l.fileFormatChanCurrCnt, -1)
 			}
 		}
 	}()
 }
 
 func (l *Logger) writeFile(data []byte) {
-	if err := l.checkFile(); err != nil {
+	f, err := l.opt.FileSplit(l, l.file)
+	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	l.file.Write(data)
-	atomic.AddInt64(&l.currFileSize, int64(len(data)))
+	l.file = f
+
+	err = l.file.write(data)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 }
 
-func (l *Logger) openFile() error {
-	var err error
-	err = os.MkdirAll(l.config.filePath, 0777)
-	if err != nil {
-		return err
-	}
-	l.file, err = os.OpenFile(l.config.GetFilePath(), os.O_RDWR|os.O_APPEND|os.O_CREATE, 0666)
-	if err != nil {
-		return err
-	}
-	l.currFileSize = 0
-	return nil
-}
-
-func (l *Logger) checkFile() error {
-	if l.file == nil {
-		return l.openFile()
-	}
-	if l.currFileSize < l.config.fileSizeMax {
-		return nil
-	}
-	err := l.file.Close()
-	if err != nil {
-		return err
-	}
-	logFilePath := l.config.GetFilePath()
-	filePath := logFilePath + "." + strconv.Itoa(l.config.fileCntMax-1)
-	if isFileExit(filePath) {
-		// fmt.Println("Remove oldest log file", filePath)
-		err := os.Remove(filePath)
-		if err != nil {
-			return err
-		}
-	}
-
-	for i := l.config.fileCntMax; i > 0; i-- {
-		tFilePath := logFilePath + "." + strconv.Itoa(i-2)
-		if isFileExit(tFilePath) {
-			// fmt.Println("Rename log file", tFilePath, logFilePath+"."+strconv.Itoa(i-1))
-			err := os.Rename(tFilePath, logFilePath+"."+strconv.Itoa(i-1))
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	// fmt.Println("Rename curr log file", logFilePath, logFilePath+".1")
-	err = os.Rename(logFilePath, logFilePath+".1")
-	if err != nil {
-		return err
-	}
-	return l.openFile()
-}
-
-func (l *Logger) SetFileSize(size int64) {
-	l.config.fileSizeMax = size
+func (l *Logger) SetFileSize(size Unit) {
+	l.opt.FileSizeMax = size
 }
 
 func (l *Logger) SetFileCount(count int) {
-	l.config.fileCntMax = count
-}
-
-func (l *Logger) SetContextCallBackFunc(f func(ctx context.Context) string) {
-	if l == nil {
-		return
-	}
-	l.config.ctxCBFunc = f
-}
-
-func (l *Logger) SetCallBackFunc(f func(*Format)) {
-	l.callBackFunc = f
-}
-
-func (l *Logger) SetConsoleFormat(f func(*Format) []byte) {
-	l.config.consoleFormatFunc = f
-}
-
-func (l *Logger) SetFileFormat(f func(*Format) []byte) {
-	l.config.fileFormatFunc = f
+	l.opt.FileCountMax = count
 }
