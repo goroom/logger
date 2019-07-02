@@ -61,7 +61,10 @@ func WithConsoleLevel(lvl Level) Options {
 
 // WithConsole 是否在终端输出日志
 func WithConsole(isShowConsole bool) Options {
-	return func(o *option) { o.ConsoleLevel = OFF }
+	if !isShowConsole {
+		return func(o *option) { o.ConsoleLevel = OFF }
+	}
+	return func(o *option) {}
 }
 
 // WithFileDir 设置文件路径
