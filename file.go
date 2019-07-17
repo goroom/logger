@@ -41,7 +41,8 @@ func (f *File) Close() {
 	}
 }
 
-func DefaultFileSplitBySize(lg *Logger, f *File) (*File, error) {
+// DefaultFileSplitBySize 按照文件大小拆分
+func DefaultFileSplitBySize(lg *Logger, f *File, format *Format) (*File, error) {
 	if f != nil && f.Size < lg.opt.FileSizeMax {
 		return f, nil
 	}
@@ -77,7 +78,36 @@ func DefaultFileSplitBySize(lg *Logger, f *File) (*File, error) {
 	return newFile(lg.opt.FileDir, lg.opt.FileName+".log")
 }
 
-func DefaultFileNoSplit(lg *Logger, f *File) (*File, error) {
+// DefaultFileSplitByMinute 按照分钟拆分
+func DefaultFileSplitByMinute(lg *Logger, f *File, format *Format) (*File, error) {
+	newFileName := lg.opt.FileName + "_" + format.Time.Format("20060102_1504") + ".log"
+	if f != nil && f.File.Name() == newFileName {
+		return f, nil
+	}
+
+	if f != nil {
+		f.Close()
+	}
+
+	return newFile(lg.opt.FileDir, newFileName)
+}
+
+// DefaultFileSplitByHour 按照小时拆分
+func DefaultFileSplitByHour(lg *Logger, f *File, format *Format) (*File, error) {
+	newFileName := lg.opt.FileName + "_" + format.Time.Format("20060102_15") + ".log"
+	if f != nil && f.File.Name() == newFileName {
+		return f, nil
+	}
+
+	if f != nil {
+		f.Close()
+	}
+
+	return newFile(lg.opt.FileDir, newFileName)
+}
+
+// DefaultFileNoSplit 无拆分
+func DefaultFileNoSplit(lg *Logger, f *File, format *Format) (*File, error) {
 	if f == nil {
 		f, err := newFile(lg.opt.FileDir, lg.opt.FileName+".log")
 		if err != nil {

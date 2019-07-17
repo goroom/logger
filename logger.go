@@ -158,22 +158,22 @@ func (l *Logger) run() {
 				if !ok {
 					return
 				}
-				l.writeFile(l.opt.FileFormatFunc(format))
+				l.writeFile(format)
 				atomic.AddInt64(&l.fileFormatChanCurrCnt, -1)
 			}
 		}
 	}()
 }
 
-func (l *Logger) writeFile(data []byte) {
-	f, err := l.opt.FileSplit(l, l.file)
+func (l *Logger) writeFile(format *Format) {
+	f, err := l.opt.FileSplit(l, l.file, format)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	l.file = f
 
-	err = l.file.write(data)
+	err = l.file.write(l.opt.FileFormatFunc(format))
 	if err != nil {
 		fmt.Println(err)
 		return

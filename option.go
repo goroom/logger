@@ -12,7 +12,7 @@ type option struct {
 	FileName       string
 	FileLevel      Level
 	FileDir        string
-	FileSplit      func(*Logger, *File) (*File, error)
+	FileSplit      func(*Logger, *File, *Format) (*File, error)
 	FileSizeMax    Unit
 	FileCountMax   int
 	FileFormatFunc func(*Format) []byte
@@ -33,8 +33,8 @@ func newDefaultOption() *option {
 		FileLevel:      OFF,
 		FileDir:        "./log",
 		FileSplit:      DefaultFileSplitBySize,
-		FileSizeMax:    MB * 100,
-		FileCountMax:   5,
+		FileSizeMax:    MB * 50,
+		FileCountMax:   10,
 		FileFormatFunc: defaultFileFormatFunc,
 
 		ConsoleLevel:      INFO,
@@ -72,6 +72,7 @@ func WithFileDir(dir string) Options {
 	return func(o *option) { o.FileDir = dir }
 }
 
+// WithFileName 设置文件名
 func WithFileName(fileName string) Options {
 	return func(o *option) { o.FileName = fileName }
 }
@@ -81,8 +82,14 @@ func WithFileSize(fileSize Unit) Options {
 	return func(o *option) { o.FileSizeMax = fileSize }
 }
 
-// WithFileSize 设置文件大小
-func WithFileSplit(f func(*Logger, *File) (*File, error)) Options {
+// WithFileSize 设置最多保留的文件个数
+func WithFileMaxCount(maxCount int) Options {
+	return func(o *option) { o.FileCountMax = maxCount }
+}
+
+// WithFileSize 设置自定义的文件拆分方法
+// 默认按照文件大小拆分
+func WithFileSplit(f func(*Logger, *File, *Format) (*File, error)) Options {
 	return func(o *option) { o.FileSplit = f }
 }
 
