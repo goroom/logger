@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 )
 
 type option struct {
@@ -26,10 +27,12 @@ type option struct {
 type Options func(*option)
 
 func newDefaultOption() *option {
+	exeName, _ := os.Getwd()
+
 	return &option{
 		ChannelBuffLength: 10000,
 
-		FileName:       path.Base(os.Args[0]),
+		FileName:       path.Base(filepath.ToSlash(exeName)),
 		FileLevel:      OFF,
 		FileDir:        "./log",
 		FileSplit:      DefaultFileSplitBySize,
