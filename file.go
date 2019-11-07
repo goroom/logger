@@ -10,11 +10,20 @@ type File struct {
 	Size Unit
 }
 
-func newFile(dir, name string) (*File, error) {
+func newFile(dir, name string, symlinkName string) (*File, error) {
 	f, err := openFile(dir, name)
 	if err != nil {
 		return nil, err
 	}
+
+	if symlinkName != "" {
+		_ = os.Remove(dir + "/" + symlinkName)
+		err = os.Symlink(name, dir+"/"+symlinkName)
+		if err != nil {
+			fmt.Println("error,", err)
+		}
+	}
+
 	return &File{
 		File: f,
 	}, nil
@@ -48,7 +57,7 @@ func DefaultFileSplitBySize(lg *Logger, f *File, format *Format) (*File, error) 
 	}
 
 	if f == nil {
-		f, err := newFile(lg.opt.FileDir, lg.opt.FileName+".log")
+		f, err := newFile(lg.opt.FileDir, lg.opt.FileName+".log", "")
 		if err != nil {
 			return nil, err
 		}
@@ -75,13 +84,13 @@ func DefaultFileSplitBySize(lg *Logger, f *File, format *Format) (*File, error) 
 			}
 		}
 	}
-	return newFile(lg.opt.FileDir, lg.opt.FileName+".log")
+	return newFile(lg.opt.FileDir, lg.opt.FileName+".log", "")
 }
 
 // DefaultFileSplitByMinute 按照分钟拆分
 func DefaultFileSplitByMinute(lg *Logger, f *File, format *Format) (*File, error) {
 	newFileName := lg.opt.FileName + "_" + format.Time.Format("20060102_1504") + ".log"
-	if f != nil && f.File.Name() == newFileName {
+	if f != nil && f.File.Name() == lg.opt.FileDir+"/"+newFileName {
 		return f, nil
 	}
 
@@ -89,13 +98,13 @@ func DefaultFileSplitByMinute(lg *Logger, f *File, format *Format) (*File, error
 		f.Close()
 	}
 
-	return newFile(lg.opt.FileDir, newFileName)
+	return newFile(lg.opt.FileDir, newFileName, lg.opt.FileName+".log")
 }
 
 // DefaultFileSplitByHour 按照小时拆分
 func DefaultFileSplitByHour(lg *Logger, f *File, format *Format) (*File, error) {
 	newFileName := lg.opt.FileName + "_" + format.Time.Format("20060102_15") + ".log"
-	if f != nil && f.File.Name() == newFileName {
+	if f != nil && f.File.Name() == lg.opt.FileDir+"/"+newFileName {
 		return f, nil
 	}
 
@@ -103,13 +112,13 @@ func DefaultFileSplitByHour(lg *Logger, f *File, format *Format) (*File, error) 
 		f.Close()
 	}
 
-	return newFile(lg.opt.FileDir, newFileName)
+	return newFile(lg.opt.FileDir, newFileName, lg.opt.FileName+".log")
 }
 
 // DefaultFileNoSplit 无拆分
 func DefaultFileNoSplit(lg *Logger, f *File, format *Format) (*File, error) {
 	if f == nil {
-		f, err := newFile(lg.opt.FileDir, lg.opt.FileName+".log")
+		f, err := newFile(lg.opt.FileDir, lg.opt.FileName+".log", "")
 		if err != nil {
 			return nil, err
 		}
