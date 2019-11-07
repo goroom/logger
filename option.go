@@ -28,10 +28,14 @@ type option struct {
 type Options func(*option)
 
 func newDefaultOption() *option {
+	fileName := path.Base(filepath.ToSlash(os.Args[0]))
+	if strings.HasSuffix(strings.ToLower(fileName), ".exe") {
+		fileName = fileName[:len(fileName)-4]
+	}
 	return &option{
 		ChannelBuffLength: 10000,
 
-		FileName:       strings.TrimRight(path.Base(filepath.ToSlash(os.Args[0])), ".exe"),
+		FileName:       fileName,
 		FileLevel:      OFF,
 		FileDir:        "./log",
 		FileSplit:      DefaultFileSplitBySize,
@@ -98,4 +102,12 @@ func WithFileSplit(f func(*Logger, *File, *Format) (*File, error)) Options {
 // WithCallBack 回调
 func WithCallBack(f func(*Format)) Options {
 	return func(o *option) { o.CallBackFunc = f }
+}
+
+func WithFileFormatFunc(f func(f *Format) []byte) Options {
+	return func(o *option) { o.FileFormatFunc = f }
+}
+
+func WithConsoleFormatFunc(f func(f *Format) string) Options {
+	return func(o *option) { o.ConsoleFormatFunc = f }
 }
